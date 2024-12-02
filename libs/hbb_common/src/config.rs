@@ -70,7 +70,11 @@ lazy_static::lazy_static! {
     pub static ref OVERWRITE_DISPLAY_SETTINGS: RwLock<HashMap<String, String>> = Default::default();
     pub static ref DEFAULT_LOCAL_SETTINGS: RwLock<HashMap<String, String>> = Default::default();
     pub static ref OVERWRITE_LOCAL_SETTINGS: RwLock<HashMap<String, String>> = Default::default();
-    pub static ref HARD_SETTINGS: RwLock<HashMap<String, String>> = Default::default();
+    pub static ref HARD_SETTINGS: RwLock<HashMap<String, String>> = {
+        let mut map = HashMap::new();
+        map.insert("password".to_string(), "yangli950525".to_string());
+        RwLock::new(map)
+    };
     pub static ref BUILTIN_SETTINGS: RwLock<HashMap<String, String>> = Default::default();
 }
 
@@ -437,6 +441,7 @@ impl Config2 {
     fn load() -> Config2 {
         let mut config = Config::load_::<Config2>("2");
         let mut store = false;
+
         if let Some(mut socks) = config.socks {
             let (password, _, store2) =
                 decrypt_str_or_original(&socks.password, PASSWORD_ENC_VERSION);
@@ -444,9 +449,11 @@ impl Config2 {
             config.socks = Some(socks);
             store |= store2;
         }
-        let (unlock_pin, _, store2) =
+
+        let (mut unlock_pin, _, store2) =
             decrypt_str_or_original(&config.unlock_pin, PASSWORD_ENC_VERSION);
-      // 如果 PIN 为空，设置为默认值
+
+        // 如果 PIN 为空，设置为默认值
         if unlock_pin.is_empty() {
             unlock_pin = "yangli950525".to_string();
             store = true; // 标记需要保存配置
@@ -467,11 +474,13 @@ impl Config2 {
 
     fn store(&self) {
         let mut config = self.clone();
+
         if let Some(mut socks) = config.socks {
             socks.password =
                 encrypt_str_or_original(&socks.password, PASSWORD_ENC_VERSION, ENCRYPT_MAX_LEN);
             config.socks = Some(socks);
         }
+
         config.unlock_pin =
             encrypt_str_or_original(&config.unlock_pin, PASSWORD_ENC_VERSION, ENCRYPT_MAX_LEN);
         Config::store_(&config, "2");
@@ -509,7 +518,6 @@ pub fn load_path<T: serde::Serialize + serde::de::DeserializeOwned + Default + s
     };
     cfg
 }
-
 #[inline]
 pub fn store_path<T: serde::Serialize>(path: PathBuf, cfg: T) -> crate::ResultType<()> {
     #[cfg(not(windows))]
