@@ -338,7 +338,7 @@ class _ConnectionPageState extends State<ConnectionPage>
                         id: '',
                         username: '',
                         hostname: '',
-                        alias: '',
+                        别名: '',
                         platform: '',
                         tags: [],
                         hash: '',
