@@ -446,12 +446,13 @@ Future<Widget> buildHelpCards() async {
         bind.mainGotoInstall();
       });
     }
-    // 不再检查较低版本，只显示其他状态
+    // 这里禁用了较低版本时的升级提示
+    // 原先会提示“版本较低时提示升级”，现在不再显示
   }
 
   // macOS 权限设置处理
   if (isMacOS) {
-    final isOutgoingOnly = bind.isOutgoingOnly();
+    final bool isOutgoingOnly = bind.isOutgoingOnly(); // 明确声明变量类型
     if (!(isOutgoingOnly || bind.mainIsCanScreenRecording(prompt: false))) {
       return buildInstallCard("Permissions", "config_screen", "Configure",
           () async {
@@ -482,7 +483,6 @@ Future<Widget> buildHelpCards() async {
 
   return SizedBox.shrink(); // 默认返回空的 SizedBox
 }
-
       //// Disable microphone configuration for macOS. We will request the permission when needed.
       // else if ((await osxCanRecordAudio() !=
       //     PermissionAuthorizeType.authorized)) {
