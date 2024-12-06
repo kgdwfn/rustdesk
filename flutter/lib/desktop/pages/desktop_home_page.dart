@@ -415,67 +415,74 @@ class _DesktopHomePageState extends State<DesktopHomePage>
     );
   }
 
-  Future<Widget> buildHelpCards() async {
-    if (!bind.isCustomClient() &&
-        updateUrl.isNotEmpty &&
-        !isCardClosed &&
-        bind.mainUriPrefixSync().contains('rustdesk')) {
-      return buildInstallCard(
-          "Status",
-          "There is a newer version of ${bind.mainGetAppNameSync()} ${bind.mainGetNewVersion()} available.",
-          "Click to download", () async {
-        final Uri url = Uri.parse('https://rustdesk.com/download');
-        await launchUrl(url);
-      }, closeButton: true);
-    }
-    if (systemError.isNotEmpty) {
-      return buildInstallCard("", systemError, "", () {});
-    }
+Future<Widget> buildHelpCards() async {
+  // 版本更新提示卡片
+  if (!bind.isCustomClient() &&
+      updateUrl.isNotEmpty &&
+      !isCardClosed &&
+      bind.mainUriPrefixSync().contains('rustdesk')) {
+    return buildInstallCard(
+        "Status",
+        "There is a newer version of ${bind.mainGetAppNameSync()} ${bind.mainGetNewVersion()} available.",
+        "Click to download", () async {
+      final Uri url = Uri.parse('https://rustdesk.com/download');
+      await launchUrl(url);
+    }, closeButton: true);
+  }
 
-    if (isWindows && !bind.isDisableInstallation()) {
-      if (!bind.mainIsInstalled()) {
-        return buildInstallCard(
-            "", bind.isOutgoingOnly() ? "" : "install_tip", "Install",
-            () async {
-          await rustDeskWinManager.closeAllSubWindows();
-          bind.mainGotoInstall();
-        });
-      } else if (bind.mainIsInstalledLowerVersion()) {
-        return buildInstallCard(
-            "Status", "Your installation is lower version.", "Click to upgrade",
-            () async {
-          await rustDeskWinManager.closeAllSubWindows();
-          bind.mainUpdateMe();
-        });
-      }
-    } else if (isMacOS) {
-      final isOutgoingOnly = bind.isOutgoingOnly();
-      if (!(isOutgoingOnly || bind.mainIsCanScreenRecording(prompt: false))) {
-        return buildInstallCard("Permissions", "config_screen", "Configure",
-            () async {
-          bind.mainIsCanScreenRecording(prompt: true);
-          watchIsCanScreenRecording = true;
-        }, help: 'Help', link: translate("doc_mac_permission"));
-      } else if (!isOutgoingOnly && !bind.mainIsProcessTrusted(prompt: false)) {
-        return buildInstallCard("Permissions", "config_acc", "Configure",
-            () async {
-          bind.mainIsProcessTrusted(prompt: true);
-          watchIsProcessTrust = true;
-        }, help: 'Help', link: translate("doc_mac_permission"));
-      } else if (!bind.mainIsCanInputMonitoring(prompt: false)) {
-        return buildInstallCard("Permissions", "config_input", "Configure",
-            () async {
-          bind.mainIsCanInputMonitoring(prompt: true);
-          watchIsInputMonitoring = true;
-        }, help: 'Help', link: translate("doc_mac_permission"));
-      } else if (!isOutgoingOnly &&
-          !svcStopped.value &&
-          bind.mainIsInstalled() &&
-          !bind.mainIsInstalledDaemon(prompt: false)) {
-        return buildInstallCard("", "install_daemon_tip", "Install", () async {
-          bind.mainIsInstalledDaemon(prompt: true);
-        });
-      }
+  // 系统错误提示卡片
+  if (systemError.isNotEmpty) {
+    return buildInstallCard("", systemError, "", () {});
+  }
+
+  // Windows 安装状态处理
+  if (isWindows && !bind.isDisableInstallation()) {
+    // 只处理未安装的情况，禁用版本较低时的升级提示
+    if (!bind.mainIsInstalled()) {
+      return buildInstallCard(
+          "", bind.isOutgoingOnly() ? "" : "install_tip", "Install",
+          () async {
+        await rustDeskWinManager.closeAllSubWindows();
+        bind.mainGotoInstall();
+      });
+    }
+    // 不再检查较低版本，只显示其他状态
+  }
+
+  // macOS 权限设置处理
+  if (isMacOS) {
+    final isOutgoingOnly = bind.isOutgoingOnly();
+    if (!(isOutgoingOnly || bind.mainIsCanScreenRecording(prompt: false))) {
+      return buildInstallCard("Permissions", "config_screen", "Configure",
+          () async {
+        bind.mainIsCanScreenRecording(prompt: true);
+        watchIsCanScreenRecording = true;
+      }, help: 'Help', link: translate("doc_mac_permission"));
+    } else if (!isOutgoingOnly && !bind.mainIsProcessTrusted(prompt: false)) {
+      return buildInstallCard("Permissions", "config_acc", "Configure",
+          () async {
+        bind.mainIsProcessTrusted(prompt: true);
+        watchIsProcessTrust = true;
+      }, help: 'Help', link: translate("doc_mac_permission"));
+    } else if (!bind.mainIsCanInputMonitoring(prompt: false)) {
+      return buildInstallCard("Permissions", "config_input", "Configure",
+          () async {
+        bind.mainIsCanInputMonitoring(prompt: true);
+        watchIsInputMonitoring = true;
+      }, help: 'Help', link: translate("doc_mac_permission"));
+    } else if (!isOutgoingOnly &&
+        !svcStopped.value &&
+        bind.mainIsInstalled() &&
+        !bind.mainIsInstalledDaemon(prompt: false)) {
+      return buildInstallCard("", "install_daemon_tip", "Install", () async {
+        bind.mainIsInstalledDaemon(prompt: true);
+      });
+    }
+  }
+
+  return SizedBox.shrink(); // 默认返回空的 SizedBox
+}
+
       //// Disable microphone configuration for macOS. We will request the permission when needed.
       // else if ((await osxCanRecordAudio() !=
       //     PermissionAuthorizeType.authorized)) {
