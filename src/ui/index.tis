@@ -650,61 +650,44 @@ function download(from, to, args..) {
 }
 
 // current running version is higher than installed
-class UpgradeMe: Reactor.Component {
-    function render() {
-        var update_or_download = is_osx ? "download" : "update";
-        return <div .install-me>
-            <div>{translate('Status')}</div>
-            <div>{translate('Your installation is lower version.')}</div>
-            <div #install-me.link>{translate('Click to upgrade')}</div>
-        </div>;
-    }
-
-    event click $(#install-me) {
-        handler.update_me("");
-    }
-}
-
 class UpdateMe: Reactor.Component {
     function render() {
-        var update_or_download = "download"; // !is_win ? "download" : "update";
+        // 直接显示按钮，去除所有关于新版本的提示
         return <div .install-me>
-            <div>{translate('Status')}</div>
-            <div>There is a newer version of {handler.get_app_name()} ({handler.get_new_version()}) available.</div>
-            <div #install-me.link>{translate('Click to ' + update_or_download)}</div>
+            <div>{translate('状态')}</div>
+            <div>{translate('点击进行升级或下载')}</div>  {/* 去掉新版本相关提示 */}
+            <div #install-me.link>{translate('点击进行升级或下载')}</div>
             <div #download-percent style="display:hidden; padding-top: 1em;" />
         </div>;
     }
 
     event click $(#install-me) {
-        handler.open_url("https://rustdesk.com/download");
-        return;
+        // 跳过版本检查和提示，直接进行下载或升级操作
         if (!is_win) {
             handler.open_url("https://rustdesk.com");
             return;
         }
+
         var url = software_update_url + '.' + handler.get_software_ext();
         var path = handler.get_software_store_path();
         var onsuccess = function(md5) {
-            $(#download-percent).content(translate("Installing ..."));
-            handler.update_me(path);
+            $(#download-percent).content(translate("正在安装..."));
+            handler.update_me(path); // 直接进行安装
         };
         var onerror = function(err) {
-            msgbox("custom-error", "Download Error", "Failed to download"); 
+            msgbox("custom-error", "下载错误", "下载失败");
         };
         var onprogress = function(loaded, total) {
-            if (!total) total = 5 * 1024 * 1024;
+            if (!total) total = 5 * 1024 * 1024; // 如果没有 total，使用默认值
             var el = $(#download-percent);
             el.style.set{display: "block"};
-            el.content("Downloading %" + (loaded * 100 / total));
+            el.content("下载进度 %" + (loaded * 100 / total));
         };
-        stdout.println("Downloading " + url + " to " + path);
-        download(
-            url,
-            self.url(path),
-            onsuccess, onerror, onprogress);
+        stdout.println("正在下载 " + url + " 到 " + path);
+        download(url, self.url(path), onsuccess, onerror, onprogress);
     }
 }
+
 
 class SystemError: Reactor.Component {
     function render() {
