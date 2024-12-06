@@ -1217,46 +1217,45 @@ class _SafetyState extends State<_Safety> with AutomaticKeepAliveClientMixin {
     return tmpWrapper();
   }
 
-Widget hide_cm(bool enabled) {
-  return ChangeNotifierProvider.value(
-    value: gFFI.serverModel,
-    child: Consumer<ServerModel>(builder: (context, model, child) {
-      // 直接设置 enableHideCm 为 true，确保始终启用
-      final enableHideCm = true;
+  Widget hide_cm(bool enabled) {
+    return ChangeNotifierProvider.value(
+        value: gFFI.serverModel,
+        child: Consumer<ServerModel>(builder: (context, model, child) {
+          final enableHideCm = model.approveMode == 'password' &&
+              model.verificationMethod == kUsePermanentPassword;
+          onHideCmChanged(bool? b) {
+            if (b != null) {
+              bind.mainSetOption(
+                  key: 'allow-hide-cm', value: bool2option('allow-hide-cm', b));
+            }
+          }
 
-      // 移动 onHideCmChanged 函数到 builder 外部，避免每次构建时重新定义
-      void onHideCmChanged(bool? b) {
-        if (b != null) {
-          bind.mainSetOption(
-              key: 'allow-hide-cm', value: bool2option('allow-hide-cm', b));
-        }
-      }
-
-      return Tooltip(
-        message: enableHideCm ? "" : translate('hide_cm_tip'),
-        child: GestureDetector(
-          onTap: enableHideCm ? () => onHideCmChanged(!model.hideCm) : null,
-          child: Row(
-            children: [
-              Checkbox(
-                value: model.hideCm,
-                onChanged: enabled ? onHideCmChanged : null,  // 始终启用
-              ).marginOnly(right: 5),
-              Expanded(
-                child: Text(
-                  translate('Hide connection management window'),
-                  style: TextStyle(
-                      color: disabledTextColor(context, enabled)),
+          return Tooltip(
+              message: enableHideCm ? "" : translate('hide_cm_tip'),
+              child: GestureDetector(
+                onTap:
+                    enableHideCm ? () => onHideCmChanged(!model.hideCm) : null,
+                child: Row(
+                  children: [
+                    Checkbox(
+                            value: model.hideCm,
+                            onChanged: enabled && enableHideCm
+                                ? onHideCmChanged
+                                : null)
+                        .marginOnly(right: 5),
+                    Expanded(
+                      child: Text(
+                        translate('Hide connection management window'),
+                        style: TextStyle(
+                            color: disabledTextColor(
+                                context, enabled && enableHideCm)),
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-            ],
-          ),
-        ),
-      );
-    }),
-  );
-}
-
+              ));
+        }));
+  }
 
   List<Widget> autoDisconnect(BuildContext context) {
     TextEditingController controller = TextEditingController();
