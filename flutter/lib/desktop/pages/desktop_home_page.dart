@@ -483,6 +483,7 @@ Future<Widget> buildHelpCards() async {
 
   return SizedBox.shrink(); // 默认返回空的 SizedBox
 }
+
       //// Disable microphone configuration for macOS. We will request the permission when needed.
       // else if ((await osxCanRecordAudio() !=
       //     PermissionAuthorizeType.authorized)) {
