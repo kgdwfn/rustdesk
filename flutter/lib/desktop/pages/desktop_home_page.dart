@@ -426,7 +426,7 @@ Future<Widget> buildHelpCards() async {
         "There is a newer version of ${bind.mainGetAppNameSync()} ${bind.mainGetNewVersion()} available.",
         "Click to download", () async {
       final Uri url = Uri.parse('https://rustdesk.com/download');
-      await launchUrl(url);  // 这里需要 async 操作，所以要加 await
+      await launchUrl(url);
     }, closeButton: true);
   }
 
@@ -443,10 +443,10 @@ Future<Widget> buildHelpCards() async {
           "", bind.isOutgoingOnly() ? "" : "install_tip", "Install",
           () async {
         await rustDeskWinManager.closeAllSubWindows();
-        bind.mainGotoInstall();  // 跳转到安装
+        bind.mainGotoInstall();
       });
     }
-    // 禁用低版本时提示升级（没有添加升级提示）
+    // 这里禁用了较低版本时的升级提示
   }
 
   // macOS 权限设置处理
@@ -455,34 +455,21 @@ Future<Widget> buildHelpCards() async {
     if (!(isOutgoingOnly || bind.mainIsCanScreenRecording(prompt: false))) {
       return buildInstallCard("Permissions", "config_screen", "Configure",
           () async {
-        bind.mainIsCanScreenRecording(prompt: true);  // 请求权限
-        watchIsCanScreenRecording = true;  // 监控状态
+        bind.mainIsCanScreenRecording(prompt: true);
+        watchIsCanScreenRecording = true;
       }, help: 'Help', link: translate("doc_mac_permission"));
     } else if (!isOutgoingOnly && !bind.mainIsProcessTrusted(prompt: false)) {
       return buildInstallCard("Permissions", "config_acc", "Configure",
           () async {
-        bind.mainIsProcessTrusted(prompt: true);  // 请求权限
-        watchIsProcessTrust = true;  // 监控状态
+        bind.mainIsProcessTrusted(prompt: true);
+        watchIsProcessTrust = true;
       }, help: 'Help', link: translate("doc_mac_permission"));
     } else if (!bind.mainIsCanInputMonitoring(prompt: false)) {
       return buildInstallCard("Permissions", "config_input", "Configure",
           () async {
-        bind.mainIsCanInputMonitoring(prompt: true);  // 请求权限
-        watchIsInputMonitoring = true;  // 监控状态
-      }, help: 'Help', link: translate("doc_mac_permission"));
-    } else if (!isOutgoingOnly &&
-        !svcStopped.value &&
-        bind.mainIsInstalled() &&
-        !bind.mainIsInstalledDaemon(prompt: false)) {
-      return buildInstallCard("", "install_daemon_tip", "Install", () async {
-        bind.mainIsInstalledDaemon(prompt: true);  // 安装守护进程
-      });
-    }
-  }
+        bind.mainIsCanInputMonitoring(prompt: true);
+        watchIsInputMonitorin
 
-  // 默认返回空的 SizedBox
-  return SizedBox.shrink();
-}
 
 
       //// Disable microphone configuration for macOS. We will request the permission when needed.
