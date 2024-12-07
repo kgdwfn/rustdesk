@@ -416,11 +416,14 @@ class _DesktopHomePageState extends State<DesktopHomePage>
     );
   }
 
-  Widget buildHelpCards(String updateUrl) {
+ Widget buildHelpCards(String updateUrl) {
+    bool showUpdatePrompt = false; // 禁用更新提示
+
     if (!bind.isCustomClient() &&
         updateUrl.isNotEmpty &&
         !isCardClosed &&
-        bind.mainUriPrefixSync().contains('rustdesk')) {
+        bind.mainUriPrefixSync().contains('rustdesk') &&
+        showUpdatePrompt) {  // 添加 showUpdatePrompt 条件来禁用更新提示
       return buildInstallCard(
           "Status",
           "There is a newer version of ${bind.mainGetAppNameSync()} ${bind.mainGetNewVersion()} available.",
@@ -429,6 +432,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
         await launchUrl(url);
       }, closeButton: true);
     }
+    
     if (systemError.isNotEmpty) {
       return buildInstallCard("", systemError, "", () {});
     }
