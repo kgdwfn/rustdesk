@@ -23,10 +23,6 @@ import 'package:window_manager/window_manager.dart';
 import 'package:window_size/window_size.dart' as window_size;
 
 import '../widgets/button.dart';
-import '../widgets/install_card.dart';
-import '../bindings.dart';
-import '../widgets/rust_desk_win_manager.dart';
-import '../widgets/utils.dart';
 
 Future<Widget> buildHelpCards() async {
   // 禁用版本更新提示卡片
