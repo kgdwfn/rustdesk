@@ -415,43 +415,44 @@ class _DesktopHomePageState extends State<DesktopHomePage>
     );
   }
 
-Future<Widget> buildHelpCards() async {
-  // 禁用版本更新提示卡片
-  // if (!bind.isCustomClient() &&
-  //     updateUrl.isNotEmpty &&
-  //     !isCardClosed &&
-  //     bind.mainUriPrefixSync().contains('rustdesk')) {
-  //   return buildInstallCard(
-  //       "Status",
-  //       "There is a newer version of ${bind.mainGetAppNameSync()} ${bind.mainGetNewVersion()} available.",
-  //       "Click to download", () async {
-  //     final Uri url = Uri.parse('https://rustdesk.com/download');
-  //     await launchUrl(url);
-  //   }, closeButton: true);
-  // }
-
-  // 系统错误提示卡片
+ Future<Widget> buildHelpCards() async {
+  if (!bind.isCustomClient() &&
+      updateUrl.isNotEmpty &&
+      !isCardClosed &&
+      bind.mainUriPrefixSync().contains('rustdesk')) {
+    return buildInstallCard(
+        "Status",
+        "There is a newer version of ${bind.mainGetAppNameSync()} ${bind.mainGetNewVersion()} available.",
+        "Click to download", () async {
+      final Uri url = Uri.parse('https://rustdesk.com/download');
+      await launchUrl(url);
+    }, closeButton: true);
+  }
   if (systemError.isNotEmpty) {
     return buildInstallCard("", systemError, "", () {});
   }
 
-  // Windows 安装状态处理
   if (isWindows && !bind.isDisableInstallation()) {
-    // 只处理未安装的情况，禁用版本较低时的升级提示
     if (!bind.mainIsInstalled()) {
       return buildInstallCard(
-          "", bind.isOutgoingOnly() ? "" : "install_tip", "Install",
-          () async {
+          "", bind.isOutgoingOnly() ? "" : "install_tip", "Install", () async {
         await rustDeskWinManager.closeAllSubWindows();
         bind.mainGotoInstall();
       });
     }
-    // 这里禁用了较低版本时的升级提示
-  }
-
-  // macOS 权限设置处理
-  if (isMacOS) {
-    final bool isOutgoingOnly = bind.isOutgoingOnly();  // 明确声明类型
+    // 如果需要保留以下代码，确认它们被正确注释或启用：
+    /*
+    else if (bind.mainIsInstalledLowerVersion()) {
+      return buildInstallCard(
+          "Status", "Your installation is lower version.", "Click to upgrade",
+          () async {
+        await rustDeskWinManager.closeAllSubWindows();
+        bind.mainUpdateMe();
+      });
+    }
+    */
+  } else if (isMacOS) {
+    final isOutgoingOnly = bind.isOutgoingOnly();
     if (!(isOutgoingOnly || bind.mainIsCanScreenRecording(prompt: false))) {
       return buildInstallCard("Permissions", "config_screen", "Configure",
           () async {
