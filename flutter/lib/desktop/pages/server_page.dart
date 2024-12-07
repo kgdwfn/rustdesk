@@ -528,13 +528,13 @@ Widget build(BuildContext context) {
                   ? 'assets/file_transfer.svg'
                   : 'assets/chat2.svg'),
               splashRadius: kDesktopIconButtonSplashRadius,
+          ),
+                      )
+                  ],
+                ))
+              ],
             ),
-          )
-        ],
-      ),
-    ),
-  );
-}
+          ),
           Offstage(
             offstage: !client.authorized ||
                 (client.type_() != ClientType.remote &&
