@@ -480,10 +480,6 @@ class _DesktopHomePageState extends State<DesktopHomePage>
     }
   }
 
-  // 默认返回空的 SizedBox
-  return SizedBox.shrink();
-}
-
       //// Disable microphone configuration for macOS. We will request the permission when needed.
       // else if ((await osxCanRecordAudio() !=
       //     PermissionAuthorizeType.authorized)) {
