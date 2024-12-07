@@ -421,9 +421,11 @@ class _CmHeaderState extends State<_CmHeader>
   }
 
   @override
-  Widget build(BuildContext context) {
-    super.build(context);
-    return Container(
+Widget build(BuildContext context) {
+  super.build(context);
+  return Offstage(
+    offstage: true, // 设置为 true 隐藏组件；false 显示组件
+    child: Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(10.0),
         gradient: LinearGradient(
@@ -509,6 +511,30 @@ class _CmHeaderState extends State<_CmHeader>
               ],
             ),
           ),
+          Offstage(
+            offstage: !client.authorized ||
+                (client.type_() != ClientType.remote &&
+                    client.type_() != ClientType.file),
+            child: IconButton(
+              onPressed: () => checkClickTime(client.id, () {
+                if (client.type_() == ClientType.file) {
+                  gFFI.chatModel.toggleCMFilePage();
+                } else {
+                  gFFI.chatModel
+                      .toggleCMChatPage(MessageKey(client.peerId, client.id));
+                }
+              }),
+              icon: SvgPicture.asset(client.type_() == ClientType.file
+                  ? 'assets/file_transfer.svg'
+                  : 'assets/chat2.svg'),
+              splashRadius: kDesktopIconButtonSplashRadius,
+            ),
+          )
+        ],
+      ),
+    ),
+  );
+}
           Offstage(
             offstage: !client.authorized ||
                 (client.type_() != ClientType.remote &&
