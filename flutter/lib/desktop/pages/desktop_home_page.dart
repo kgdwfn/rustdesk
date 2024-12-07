@@ -479,7 +479,6 @@ class _DesktopHomePageState extends State<DesktopHomePage>
         bind.mainIsInstalledDaemon(prompt: true);
       });
     }
-  }
       //// Disable microphone configuration for macOS. We will request the permission when needed.
       // else if ((await osxCanRecordAudio() !=
       //     PermissionAuthorizeType.authorized)) {
