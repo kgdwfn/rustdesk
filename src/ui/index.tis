@@ -669,8 +669,8 @@ class UpdateMe: Reactor.Component {
     function render() {
         var update_or_download = "download"; // !is_win ? "download" : "update";
         
-        // 条件判断是否禁用更新提示
-        var show_update_message = false; // 将其设置为 false 禁用提示
+        
+        var show_update_message = false; 
         
         return <div .install-me>
             {show_update_message ? 
@@ -680,14 +680,14 @@ class UpdateMe: Reactor.Component {
                     <div #install-me.link>{translate('Click to ' + update_or_download)}</div>
                 </div>
                 :
-                <div>{translate('No updates available')}</div> // 替换为禁用提示后的文本
+                <div>{translate('No updates available')}</div> 
             }
             <div #download-percent style="display:hidden; padding-top: 1em;" />
         </div>;
     }
 
     event click $(#install-me) {
-        // 禁用更新的情况下点击无效
+        
         var show_update_message = false;
         if (!show_update_message) {
             msgbox("info", "Update Disabled", "Update functionality is currently disabled.");
