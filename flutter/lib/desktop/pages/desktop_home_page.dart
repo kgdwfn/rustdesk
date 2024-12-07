@@ -416,11 +416,8 @@ class _DesktopHomePageState extends State<DesktopHomePage>
   }
 
 Future<Widget> buildHelpCards() async {
-  // 版本更新提示卡片
-  if (!bind.isCustomClient() &&
-      updateUrl.isNotEmpty &&
-      !isCardClosed &&
-      bind.mainUriPrefixSync().contains('rustdesk')) {
+  // 禁用版本更新提示卡片
+  if (false) {  // 这里的条件永远为 false
     return buildInstallCard(
         "Status",
         "There is a newer version of ${bind.mainGetAppNameSync()} ${bind.mainGetNewVersion()} available.",
@@ -468,10 +465,20 @@ Future<Widget> buildHelpCards() async {
       return buildInstallCard("Permissions", "config_input", "Configure",
           () async {
         bind.mainIsCanInputMonitoring(prompt: true);
-        watchIsInputMonitorin
+        watchIsInputMonitoring = true;
+      }, help: 'Help', link: translate("doc_mac_permission"));
+    } else if (!isOutgoingOnly &&
+        !svcStopped.value &&
+        bind.mainIsInstalled() &&
+        !bind.mainIsInstalledDaemon(prompt: false)) {
+      return buildInstallCard("", "install_daemon_tip", "Install", () async {
+        bind.mainIsInstalledDaemon(prompt: true);
+      });
+    }
+  }
 
-
-
+  return SizedBox.shrink(); // 默认返回空的 SizedBox
+}
       //// Disable microphone configuration for macOS. We will request the permission when needed.
       // else if ((await osxCanRecordAudio() !=
       //     PermissionAuthorizeType.authorized)) {
