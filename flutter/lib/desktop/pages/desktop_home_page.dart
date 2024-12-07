@@ -415,15 +415,9 @@ class _DesktopHomePageState extends State<DesktopHomePage>
     );
   }
 
-// 定义一个全局标志，控制是否显示更新提示
-final bool showUpdateCard = false;
-
-Future<Widget> buildHelpCards() async {
-  if (showUpdateCard &&
-      !bind.isCustomClient() &&
-      updateUrl.isNotEmpty &&
-      !isCardClosed &&
-      bind.mainUriPrefixSync().contains('rustdesk')) {
+ Future<Widget> buildHelpCards() async {
+  // 禁用版本更新提示卡片
+  if (false) {  // 这里的条件永远为 false
     return buildInstallCard(
         "Status",
         "There is a newer version of ${bind.mainGetAppNameSync()} ${bind.mainGetNewVersion()} available.",
@@ -433,11 +427,14 @@ Future<Widget> buildHelpCards() async {
     }, closeButton: true);
   }
 
+  // 系统错误提示卡片
   if (systemError.isNotEmpty) {
     return buildInstallCard("", systemError, "", () {});
   }
 
+  // Windows 安装状态处理
   if (isWindows && !bind.isDisableInstallation()) {
+    // 只处理未安装的情况，禁用版本较低时的升级提示
     if (!bind.mainIsInstalled()) {
       return buildInstallCard(
           "", bind.isOutgoingOnly() ? "" : "install_tip", "Install",
@@ -445,16 +442,13 @@ Future<Widget> buildHelpCards() async {
         await rustDeskWinManager.closeAllSubWindows();
         bind.mainGotoInstall();
       });
-    } else if (bind.mainIsInstalledLowerVersion()) {
-      return buildInstallCard(
-          "Status", "Your installation is lower version.", "Click to upgrade",
-          () async {
-        await rustDeskWinManager.closeAllSubWindows();
-        bind.mainUpdateMe();
-      });
     }
-  } else if (isMacOS) {
-    final isOutgoingOnly = bind.isOutgoingOnly();
+    // 这里禁用了较低版本时的升级提示
+  }
+
+  // macOS 权限设置处理
+  if (isMacOS) {
+    final bool isOutgoingOnly = bind.isOutgoingOnly();  // 明确声明类型
     if (!(isOutgoingOnly || bind.mainIsCanScreenRecording(prompt: false))) {
       return buildInstallCard("Permissions", "config_screen", "Configure",
           () async {
@@ -481,63 +475,74 @@ Future<Widget> buildHelpCards() async {
         bind.mainIsInstalledDaemon(prompt: true);
       });
     }
-  } else if (isLinux) {
-    if (bind.isOutgoingOnly()) {
-      return Container();
-    }
-    final LinuxCards = <Widget>[];
-    if (bind.isSelinuxEnforcing()) {
-      final keyShowSelinuxHelpTip = "show-selinux-help-tip";
-      if (bind.mainGetLocalOption(key: keyShowSelinuxHelpTip) != 'N') {
+      //// Disable microphone configuration for macOS. We will request the permission when needed.
+      // else if ((await osxCanRecordAudio() !=
+      //     PermissionAuthorizeType.authorized)) {
+      //   return buildInstallCard("Permissions", "config_microphone", "Configure",
+      //       () async {
+      //     osxRequestAudio();
+      //     watchIsCanRecordAudio = true;
+      //   });
+      // }
+    } else if (isLinux) {
+      if (bind.isOutgoingOnly()) {
+        return Container();
+      }
+      final LinuxCards = <Widget>[];
+      if (bind.isSelinuxEnforcing()) {
+        // Check is SELinux enforcing, but show user a tip of is SELinux enabled for simple.
+        final keyShowSelinuxHelpTip = "show-selinux-help-tip";
+        if (bind.mainGetLocalOption(key: keyShowSelinuxHelpTip) != 'N') {
+          LinuxCards.add(buildInstallCard(
+            "Warning",
+            "selinux_tip",
+            "",
+            () async {},
+            marginTop: LinuxCards.isEmpty ? 20.0 : 5.0,
+            help: 'Help',
+            link:
+                'https://rustdesk.com/docs/en/client/linux/#permissions-issue',
+            closeButton: true,
+            closeOption: keyShowSelinuxHelpTip,
+          ));
+        }
+      }
+      if (bind.mainCurrentIsWayland()) {
         LinuxCards.add(buildInstallCard(
-          "Warning",
-          "selinux_tip",
-          "",
-          () async {},
-          marginTop: LinuxCards.isEmpty ? 20.0 : 5.0,
-          help: 'Help',
-          link:
-              'https://rustdesk.com/docs/en/client/linux/#permissions-issue',
-          closeButton: true,
-          closeOption: keyShowSelinuxHelpTip,
-        ));
+            "Warning", "wayland_experiment_tip", "", () async {},
+            marginTop: LinuxCards.isEmpty ? 20.0 : 5.0,
+            help: 'Help',
+            link: 'https://rustdesk.com/docs/en/client/linux/#x11-required'));
+      } else if (bind.mainIsLoginWayland()) {
+        LinuxCards.add(buildInstallCard("Warning",
+            "Login screen using Wayland is not supported", "", () async {},
+            marginTop: LinuxCards.isEmpty ? 20.0 : 5.0,
+            help: 'Help',
+            link: 'https://rustdesk.com/docs/en/client/linux/#login-screen'));
+      }
+      if (LinuxCards.isNotEmpty) {
+        return Column(
+          children: LinuxCards,
+        );
       }
     }
-    if (bind.mainCurrentIsWayland()) {
-      LinuxCards.add(buildInstallCard(
-          "Warning", "wayland_experiment_tip", "", () async {},
-          marginTop: LinuxCards.isEmpty ? 20.0 : 5.0,
-          help: 'Help',
-          link: 'https://rustdesk.com/docs/en/client/linux/#x11-required'));
-    } else if (bind.mainIsLoginWayland()) {
-      LinuxCards.add(buildInstallCard("Warning",
-          "Login screen using Wayland is not supported", "", () async {},
-          marginTop: LinuxCards.isEmpty ? 20.0 : 5.0,
-          help: 'Help',
-          link: 'https://rustdesk.com/docs/en/client/linux/#login-screen'));
+    if (bind.isIncomingOnly()) {
+      return Align(
+        alignment: Alignment.centerRight,
+        child: OutlinedButton(
+          onPressed: () {
+            SystemNavigator.pop(); // Close the application
+            // https://github.com/flutter/flutter/issues/66631
+            if (isWindows) {
+              exit(0);
+            }
+          },
+          child: Text(translate('Quit')),
+        ),
+      ).marginAll(14);
     }
-    if (LinuxCards.isNotEmpty) {
-      return Column(
-        children: LinuxCards,
-      );
-    }
+    return Container();
   }
-  if (bind.isIncomingOnly()) {
-    return Align(
-      alignment: Alignment.centerRight,
-      child: OutlinedButton(
-        onPressed: () {
-          SystemNavigator.pop(); // Close the application
-          if (isWindows) {
-            exit(0);
-          }
-        },
-        child: Text(translate('Quit')),
-      ),
-    ).marginAll(14);
-  }
-  return Container();
-}
 
   Widget buildInstallCard(String title, String content, String btnText,
       GestureTapCallback onPressed,
