@@ -351,19 +351,13 @@ Widget buildConnectionCard(Client client) {
       key: ValueKey(client.id),
       children: [
         _CmHeader(client: client),
-        // 使用 Visibility 控制 PrivilegeBoard 是否显示
-        Visibility(
-          visible: false, // 控制是否显示
-          child: _PrivilegeBoard(client: client),
-        ),
+        client.type_() != ClientType.remote || client.disconnected
+            ? Offstage()
+            : _PrivilegeBoard(client: client),
         Expanded(
           child: Align(
             alignment: Alignment.bottomCenter,
-            // 使用 Visibility 控制 CmControlPanel 是否显示
-            child: Visibility(
-              visible: false, // 控制是否显示
-              child: _CmControlPanel(client: client),
-            ),
+            child: _CmControlPanel(client: client),
           ),
         )
       ],
@@ -935,66 +929,75 @@ class _CmControlPanel extends StatelessWidget {
   }
 
   buildUnAuthorized(BuildContext context) {
-    final bool canElevate = bind.cmCanElevate();
-    final model = Provider.of<ServerModel>(context);
-    final showElevation = canElevate &&
-        model.showElevation &&
-        client.type_() == ClientType.remote;
-    final showAccept = model.approveMode != 'password';
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.end,
-      children: [
-        Offstage(
-          offstage: !showElevation || !showAccept,
-          child: buildButton(context, color: Colors.green[700], onClick: () {
+  final bool canElevate = bind.cmCanElevate();
+  final model = Provider.of<ServerModel>(context);
+  final showElevation = canElevate &&
+      model.showElevation &&
+      client.type_() == ClientType.remote;
+  final showAccept = model.approveMode != 'password';
+
+  // 通过添加条件来控制面板的显示与隐藏
+  bool isClientConnected = client.isConnected; // 判断客户端是否已连接
+
+  return Column(
+    mainAxisAlignment: MainAxisAlignment.end,
+    children: [
+      // 隐藏与客户端连接的权限控制面板
+      Offstage(
+        offstage: isClientConnected || !showElevation || !showAccept,  // 只有在客户端未连接时才显示
+        child: buildButton(
+          context,
+          color: Colors.green[700],
+          onClick: () {
             handleAccept(context);
             handleElevate(context);
             windowManager.minimize();
           },
-              text: 'Accept and Elevate',
-              icon: Icon(
-                Icons.security_rounded,
-                color: Colors.white,
-                size: 14,
-              ),
-              textColor: Colors.white,
-              tooltip: 'accept_and_elevate_btn_tooltip'),
+          text: 'Accept and Elevate',
+          icon: Icon(
+            Icons.security_rounded,
+            color: Colors.white,
+            size: 14,
+          ),
+          textColor: Colors.white,
+          tooltip: 'accept_and_elevate_btn_tooltip',
         ),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            if (showAccept)
-              Expanded(
-                child: Column(
-                  children: [
-                    buildButton(
-                      context,
-                      color: MyTheme.accent,
-                      onClick: () {
-                        handleAccept(context);
-                        windowManager.minimize();
-                      },
-                      text: 'Accept',
-                      textColor: Colors.white,
-                    ),
-                  ],
-                ),
-              ),
+      ),
+      Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          if (showAccept)
             Expanded(
-              child: buildButton(
-                context,
-                color: Colors.transparent,
-                border: Border.all(color: Colors.grey),
-                onClick: handleDisconnect,
-                text: 'Cancel',
-                textColor: null,
+              child: Column(
+                children: [
+                  buildButton(
+                    context,
+                    color: MyTheme.accent,
+                    onClick: () {
+                      handleAccept(context);
+                      windowManager.minimize();
+                    },
+                    text: 'Accept',
+                    textColor: Colors.white,
+                  ),
+                ],
               ),
             ),
-          ],
-        ),
-      ],
-    ).marginOnly(bottom: buttonBottomMargin);
-  }
+          Expanded(
+            child: buildButton(
+              context,
+              color: Colors.transparent,
+              border: Border.all(color: Colors.grey),
+              onClick: handleDisconnect,
+              text: 'Cancel',
+              textColor: null,
+            ),
+          ),
+        ],
+      ),
+    ],
+  ).marginOnly(bottom: buttonBottomMargin);
+}
 
   Widget buildButton(BuildContext context,
       {required Color? color,
