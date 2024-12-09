@@ -351,13 +351,19 @@ Widget buildConnectionCard(Client client) {
       key: ValueKey(client.id),
       children: [
         _CmHeader(client: client),
-        // 这里直接隐藏 _PrivilegeBoard 权限面板，无论 client 是否授权或远程
-        Offstage(),
+        // 使用 Visibility 控制 PrivilegeBoard 是否显示
+        Visibility(
+          visible: false, // 控制是否显示
+          child: _PrivilegeBoard(client: client),
+        ),
         Expanded(
           child: Align(
             alignment: Alignment.bottomCenter,
-            // 控制面板也不显示
-            child: Offstage(),
+            // 使用 Visibility 控制 CmControlPanel 是否显示
+            child: Visibility(
+              visible: false, // 控制是否显示
+              child: _CmControlPanel(client: client),
+            ),
           ),
         )
       ],
