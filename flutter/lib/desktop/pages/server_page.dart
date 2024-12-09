@@ -435,8 +435,8 @@ class _CmHeaderState extends State<_CmHeader>
   @override
 Widget build(BuildContext context) {
   super.build(context);
-  return Offstage(
-    offstage: true, // 设置为 true 隐藏组件；false 显示组件
+  return Visibility(
+    visible: false, // 设置为 false 隐藏组件；true 显示组件
     child: Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(10.0),
