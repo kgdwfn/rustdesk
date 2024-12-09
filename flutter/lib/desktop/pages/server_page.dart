@@ -436,119 +436,122 @@ class _CmHeaderState extends State<_CmHeader>
 Widget build(BuildContext context) {
   super.build(context);
 
-  // 通过一个布尔值判断是否显示整个组件
-  bool shouldShowWidget = false; // 设置为 false 时隐藏组件，true 时显示组件
+  // 判断是否显示该组件，设置为 false 时不渲染
+  bool shouldShowWidget = false; // 设置为 false 隐藏，true 显示
 
-  return shouldShowWidget 
-    ? Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(10.0),
-          gradient: LinearGradient(
-            begin: Alignment.topRight,
-            end: Alignment.bottomLeft,
-            colors: [
-              Color(0xff00bfe1),
-              Color(0xff0071ff),
+  if (!shouldShowWidget) {
+    return SizedBox(); // 不渲染该组件，返回空的 SizedBox
+  }
+
+  // 如果 shouldShowWidget 为 true，则继续渲染该组件
+  return Container(
+    decoration: BoxDecoration(
+      borderRadius: BorderRadius.circular(10.0),
+      gradient: LinearGradient(
+        begin: Alignment.topRight,
+        end: Alignment.bottomLeft,
+        colors: [
+          Color(0xff00bfe1),
+          Color(0xff0071ff),
+        ],
+      ),
+    ),
+    margin: EdgeInsets.symmetric(horizontal: 5.0, vertical: 10.0),
+    padding: EdgeInsets.only(
+      top: 10.0,
+      bottom: 10.0,
+      left: 10.0,
+      right: 5.0,
+    ),
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: 70,
+          height: 70,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: str2color(client.name),
+            borderRadius: BorderRadius.circular(15.0),
+          ),
+          child: Text(
+            client.name[0],
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+              fontSize: 55,
+            ),
+          ),
+        ).marginOnly(right: 10.0),
+        Expanded(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              FittedBox(
+                  child: Text(
+                client.name,
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 20,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                maxLines: 1,
+              )),
+              FittedBox(
+                child: Text(
+                  "(${client.peerId})",
+                  style: TextStyle(color: Colors.white, fontSize: 14),
+                ),
+              ).marginOnly(bottom: 10.0),
+              FittedBox(
+                  child: Row(
+                children: [
+                  Text(
+                    client.authorized
+                        ? client.disconnected
+                            ? translate("Disconnected")
+                            : translate("Connected")
+                        : "${translate("Request access to your device")}...",
+                    style: TextStyle(color: Colors.white),
+                  ).marginOnly(right: 8.0),
+                  if (client.authorized)
+                    Obx(
+                      () => Text(
+                        formatDurationToTime(
+                          Duration(seconds: _time.value),
+                        ),
+                        style: TextStyle(color: Colors.white),
+                      ),
+                    )
+                ],
+              ))
             ],
           ),
         ),
-        margin: EdgeInsets.symmetric(horizontal: 5.0, vertical: 10.0),
-        padding: EdgeInsets.only(
-          top: 10.0,
-          bottom: 10.0,
-          left: 10.0,
-          right: 5.0,
-        ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              width: 70,
-              height: 70,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: str2color(client.name),
-                borderRadius: BorderRadius.circular(15.0),
-              ),
-              child: Text(
-                client.name[0],
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                  fontSize: 55,
-                ),
-              ),
-            ).marginOnly(right: 10.0),
-            Expanded(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.start,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  FittedBox(
-                      child: Text(
-                    client.name,
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 20,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    maxLines: 1,
-                  )),
-                  FittedBox(
-                    child: Text(
-                      "(${client.peerId})",
-                      style: TextStyle(color: Colors.white, fontSize: 14),
-                    ),
-                  ).marginOnly(bottom: 10.0),
-                  FittedBox(
-                      child: Row(
-                    children: [
-                      Text(
-                        client.authorized
-                            ? client.disconnected
-                                ? translate("Disconnected")
-                                : translate("Connected")
-                            : "${translate("Request access to your device")}...",
-                        style: TextStyle(color: Colors.white),
-                      ).marginOnly(right: 8.0),
-                      if (client.authorized)
-                        Obx(
-                          () => Text(
-                            formatDurationToTime(
-                              Duration(seconds: _time.value),
-                            ),
-                            style: TextStyle(color: Colors.white),
-                          ),
-                        )
-                    ],
-                  ))
-                ],
-              ),
-            ),
-            Offstage(
-              offstage: !client.authorized ||
-                  (client.type_() != ClientType.remote &&
-                      client.type_() != ClientType.file),
-              child: IconButton(
-                onPressed: () => checkClickTime(client.id, () {
-                  if (client.type_() == ClientType.file) {
-                    gFFI.chatModel.toggleCMFilePage();
-                  } else {
-                    gFFI.chatModel
-                        .toggleCMChatPage(MessageKey(client.peerId, client.id));
-                  }
-                }),
-                icon: SvgPicture.asset(client.type_() == ClientType.file
-                    ? 'assets/file_transfer.svg'
-                    : 'assets/chat2.svg'),
-                splashRadius: kDesktopIconButtonSplashRadius,
-              ),
-            )
-          ],
-        ),
-      )
-    : SizedBox(); // 如果 shouldShowWidget 为 false，则返回空的 SizedBox，表示不渲染任何东西
+        Offstage(
+          offstage: !client.authorized ||
+              (client.type_() != ClientType.remote &&
+                  client.type_() != ClientType.file),
+          child: IconButton(
+            onPressed: () => checkClickTime(client.id, () {
+              if (client.type_() == ClientType.file) {
+                gFFI.chatModel.toggleCMFilePage();
+              } else {
+                gFFI.chatModel
+                    .toggleCMChatPage(MessageKey(client.peerId, client.id));
+              }
+            }),
+            icon: SvgPicture.asset(client.type_() == ClientType.file
+                ? 'assets/file_transfer.svg'
+                : 'assets/chat2.svg'),
+            splashRadius: kDesktopIconButtonSplashRadius,
+          ),
+        )
+      ],
+    ),
+  );
 }
 
   @override
