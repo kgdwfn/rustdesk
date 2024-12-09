@@ -351,21 +351,21 @@ Widget buildConnectionCard(Client client) {
       key: ValueKey(client.id),
       children: [
         _CmHeader(client: client),
-        // 隐藏 _PrivilegeBoard 面板
-        Offstage(
-          offstage: true,  // 设置为 true，完全隐藏面板
+        // 将 _PrivilegeBoard 面板隐藏
+        Visibility(
+          visible: false,  // 完全隐藏 _PrivilegeBoard
           child: _PrivilegeBoard(client: client),
         ),
         Expanded(
           child: Align(
             alignment: Alignment.bottomCenter,
-            // 隐藏 _CmControlPanel 面板
-            child: Offstage(
-              offstage: true,  // 设置为 true，完全隐藏面板
+            // 将 _CmControlPanel 面板隐藏
+            child: Visibility(
+              visible: false,  // 完全隐藏 _CmControlPanel
               child: _CmControlPanel(client: client),
             ),
           ),
-        ),
+        )
       ],
     ).paddingSymmetric(vertical: 4.0, horizontal: 8.0),
   );
