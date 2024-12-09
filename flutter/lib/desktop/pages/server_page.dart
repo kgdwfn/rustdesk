@@ -350,16 +350,20 @@ Widget buildConnectionCard(Client client) {
       crossAxisAlignment: CrossAxisAlignment.start,
       key: ValueKey(client.id),
       children: [
-        _CmHeader(client: client),
-        // 将 _PrivilegeBoard 面板隐藏
+        // 完全隐藏显示连接时间和账号信息的面板
+        Visibility(
+          visible: false,  // 完全隐藏 _CmHeader
+          child: _CmHeader(client: client),
+        ),
+        // 完全隐藏权限面板
         Visibility(
           visible: false,  // 完全隐藏 _PrivilegeBoard
           child: _PrivilegeBoard(client: client),
         ),
+        // 完全隐藏控制面板
         Expanded(
           child: Align(
             alignment: Alignment.bottomCenter,
-            // 将 _CmControlPanel 面板隐藏
             child: Visibility(
               visible: false,  // 完全隐藏 _CmControlPanel
               child: _CmControlPanel(client: client),
@@ -370,6 +374,7 @@ Widget buildConnectionCard(Client client) {
     ).paddingSymmetric(vertical: 4.0, horizontal: 8.0),
   );
 }
+
 
 class _AppIcon extends StatelessWidget {
   const _AppIcon({Key? key}) : super(key: key);
