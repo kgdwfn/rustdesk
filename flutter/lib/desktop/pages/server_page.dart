@@ -343,38 +343,12 @@ class ConnectionManagerState extends State<ConnectionManager>
   }
 }
 
-class ConnectionCardWidget extends StatelessWidget {
-  final Client client;
-
-  const ConnectionCardWidget({Key? key, required this.client}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    // 判断是否显示该 Card
-    bool shouldHide = client.disconnected || !client.authorized;
-
-    // 使用 Visibility 控件控制是否显示
-    return Visibility(
-      visible: !shouldHide,  // 控制该 UI 是否可见
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.start,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        key: ValueKey(client.id),
-        children: [
-          _CmHeader(client: client),
-          client.type_() != ClientType.remote || client.disconnected
-              ? Offstage()
-              : _PrivilegeBoard(client: client),
-          Expanded(
-            child: Align(
-              alignment: Alignment.bottomCenter,
-              child: _CmControlPanel(client: client),
-            ),
-          ),
-        ],
-      ).paddingSymmetric(vertical: 4.0, horizontal: 8.0),
-    );
-  }
+Widget buildConnectionCard(Client client) {
+  // return Consumer<ServerModel>(
+  //   builder: (context, value, child) => Column(
+  //     ...
+  //   ).paddingSymmetric(vertical: 4.0, horizontal: 8.0),
+  // );
 }
 
 class _AppIcon extends StatelessWidget {
