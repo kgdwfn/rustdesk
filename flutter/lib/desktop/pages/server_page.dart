@@ -343,34 +343,47 @@ class ConnectionManagerState extends State<ConnectionManager>
   }
 }
 
-Widget buildConnectionCard(Client client) {
-  return Consumer<ServerModel>(
-    builder: (context, value, child) {
-      // 设置一个条件来控制是否隐藏 UI
-      bool shouldHide = true;  // 根据需要修改此条件
+class ConnectionCardWidget extends StatefulWidget {
+  final Client client;
 
-      return Offstage(
-        offstage: shouldHide,  // 控制是否隐藏
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.start,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          key: ValueKey(client.id),
-          children: [
-            _CmHeader(client: client),
-            client.type_() != ClientType.remote || client.disconnected
-                ? Offstage()
-                : _PrivilegeBoard(client: client),
-            Expanded(
-              child: Align(
-                alignment: Alignment.bottomCenter,
-                child: _CmControlPanel(client: client),
-              ),
-            )
-          ],
-        ).paddingSymmetric(vertical: 4.0, horizontal: 8.0),
-      );
-    },
-  );
+  const ConnectionCardWidget({Key? key, required this.client}) : super(key: key);
+
+  @override
+  _ConnectionCardWidgetState createState() => _ConnectionCardWidgetState();
+}
+
+class _ConnectionCardWidgetState extends State<ConnectionCardWidget> {
+  bool shouldHide = false; // 控制是否隐藏 UI，初始为不隐藏
+
+  @override
+  Widget build(BuildContext context) {
+    // 可以根据条件设置 shouldHide
+    // 比如:
+    // shouldHide = widget.client.disconnected || !widget.client.authorized;
+    
+    // 根据 shouldHide 来决定是否渲染 UI
+    return shouldHide
+        ? SizedBox.shrink()  // 如果 shouldHide 为 true, 返回一个空的 Widget，不占用空间
+        : Consumer<ServerModel>(
+            builder: (context, value, child) => Column(
+              mainAxisAlignment: MainAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              key: ValueKey(widget.client.id),
+              children: [
+                _CmHeader(client: widget.client),
+                widget.client.type_() != ClientType.remote || widget.client.disconnected
+                    ? Offstage()
+                    : _PrivilegeBoard(client: widget.client),
+                Expanded(
+                  child: Align(
+                    alignment: Alignment.bottomCenter,
+                    child: _CmControlPanel(client: widget.client),
+                  ),
+                ),
+              ],
+            ).paddingSymmetric(vertical: 4.0, horizontal: 8.0),
+          );
+  }
 }
 
 class _AppIcon extends StatelessWidget {
