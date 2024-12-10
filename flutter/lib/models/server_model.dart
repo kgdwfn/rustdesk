@@ -576,27 +576,34 @@ class ServerModel with ChangeNotifier {
     }
   }
 
-  void _addTab(Client client) {
-    tabController.add(TabInfo(
-        key: client.id.toString(),
-        label: client.name,
-        closable: false,
-        onTap: () {},
-        page: desktop.buildConnectionCard(client)));
-    Future.delayed(Duration.zero, () async {
-      if (!hideCm) windowOnTop(null);
+void _addTab(Client client) {
+  tabController.add(TabInfo(
+    key: client.id.toString(),
+    label: client.name,
+    closable: false,
+    onTap: () {},
+    page: Builder(
+      builder: (BuildContext context) {
+        // 将原来的 desktop.buildConnectionCard(client) 替换为 ConnectionCardWidget(client: client)
+        return ConnectionCardWidget(client: client);  // 新的方式
+      },
+    ),
+  ));
+
+  Future.delayed(Duration.zero, () async {
+    if (!hideCm) windowOnTop(null);
+  });
+
+  // Only do the hidden task when on Desktop.
+  if (client.authorized && isDesktop) {
+    cmHiddenTimer = Timer(const Duration(seconds: 3), () {
+      if (!hideCm) windowManager.minimize();
+      cmHiddenTimer = null;
     });
-    // Only do the hidden task when on Desktop.
-    if (client.authorized && isDesktop) {
-      cmHiddenTimer = Timer(const Duration(seconds: 3), () {
-        if (!hideCm) windowManager.minimize();
-        cmHiddenTimer = null;
-      });
-    }
-    parent.target?.chatModel
-        .updateConnIdOfKey(MessageKey(client.peerId, client.id));
   }
 
+  parent.target?.chatModel.updateConnIdOfKey(MessageKey(client.peerId, client.id));
+}
   void showLoginDialog(Client client) {
     showClientDialog(
       client,
