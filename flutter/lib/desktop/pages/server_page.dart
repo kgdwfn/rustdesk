@@ -376,35 +376,6 @@ class ServerModel extends ChangeNotifier {
     );
   }
 }
-
-Widget buildConnectionCard(Client client) {
-  return Consumer<ServerModel>(
-    builder: (context, value, child) {
-      bool shouldHide = ServerModel.shouldHidePanels;  // 这里你控制是否隐藏面板
-
-      return shouldHide
-          ? SizedBox.shrink()  // 如果应该隐藏，则返回一个空的 Widget
-          : Column(
-              mainAxisAlignment: MainAxisAlignment.start,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              key: ValueKey(client.id),
-              children: [
-                _CmHeader(client: client),
-                client.type_() != ClientType.remote || client.disconnected
-                    ? Offstage()
-                    : _PrivilegeBoard(client: client),
-                Expanded(
-                  child: Align(
-                    alignment: Alignment.bottomCenter,
-                    child: _CmControlPanel(client: client),
-                  ),
-                ),
-              ],
-            ).paddingSymmetric(vertical: 4.0, horizontal: 8.0);
-    },
-  );
-}
-
 class _AppIcon extends StatelessWidget {
   const _AppIcon({Key? key}) : super(key: key);
 
