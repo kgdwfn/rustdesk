@@ -346,7 +346,6 @@ Widget buildSidePage() {
       return res;
     }
   }
-}
 
 Widget buildConnectionCard(Client client) {
   return Consumer<ServerModel>(
