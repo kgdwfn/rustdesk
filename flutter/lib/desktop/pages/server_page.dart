@@ -22,7 +22,7 @@ import '../../models/file_model.dart';
 import '../../models/platform_model.dart';
 import '../../models/server_model.dart';
 
-  class DesktopServerPage extends StatefulWidget {
+class DesktopServerPage extends StatefulWidget {
   const DesktopServerPage({Key? key}) : super(key: key);
 
   @override
@@ -31,11 +31,10 @@ import '../../models/server_model.dart';
 
 class _DesktopServerPageState extends State<DesktopServerPage>
     with WindowListener, AutomaticKeepAliveClientMixin {
-  
-  // --- 1. 添加 shouldHidePanels 变量 ---
-  bool shouldHidePanels = true;  // 控制卡片是否隐藏
-
   final tabController = gFFI.serverModel.tabController;
+
+  // 新增变量来控制UI显示与否
+  bool shouldHideUI = true; // 默认隐藏UI，设置为false可以显示UI
 
   _DesktopServerPageState() {
     gFFI.ffiModel.updateEventListener(gFFI.sessionId, "");
@@ -44,7 +43,7 @@ class _DesktopServerPageState extends State<DesktopServerPage>
       onRemoveId(id);
     };
   }
-  
+
   @override
   void initState() {
     windowManager.addListener(this);
@@ -56,36 +55,58 @@ class _DesktopServerPageState extends State<DesktopServerPage>
     windowManager.removeListener(this);
     super.dispose();
   }
-  
+
+  @override
+  void onWindowClose() {
+    Future.wait([gFFI.serverModel.closeAll(), gFFI.close()]).then((_) {
+      if (isMacOS) {
+        RdPlatformChannel.instance.terminate();
+      } else {
+        windowManager.setPreventClose(false);
+        windowManager.close();
+      }
+    });
+    super.onWindowClose();
+  }
+
+  void onRemoveId(String id) {
+    if (tabController.state.value.tabs.isEmpty) {
+      windowManager.close();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    return MultiProvider(
-      providers: [
-        ChangeNotifierProvider.value(value: gFFI.serverModel),
-        ChangeNotifierProvider.value(value: gFFI.chatModel),
-      ],
-      child: Consumer<ServerModel>(
-        builder: (context, serverModel, child) {
-          final body = Scaffold(
-            backgroundColor: Theme.of(context).colorScheme.background,
-            body: ConnectionManager(),
-          );
-          return isLinux
-              ? buildVirtualWindowFrame(context, body)
-              : Container(
-                  decoration: BoxDecoration(
-                      border:
-                          Border.all(color: MyTheme.color(context).border!)),
-                  child: body,
-                );
-        },
+    
+    // 使用 Offstage 控制整个 UI 的显示与隐藏
+    return Offstage(
+      offstage: shouldHideUI, // 如果为 true，则隐藏整个 UI
+      child: MultiProvider(
+        providers: [
+          ChangeNotifierProvider.value(value: gFFI.serverModel),
+          ChangeNotifierProvider.value(value: gFFI.chatModel),
+        ],
+        child: Consumer<ServerModel>(
+          builder: (context, serverModel, child) {
+            final body = Scaffold(
+              backgroundColor: Theme.of(context).colorScheme.background,
+              body: ConnectionManager(),
+            );
+            return isLinux
+                ? buildVirtualWindowFrame(context, body)
+                : Container(
+                    decoration: BoxDecoration(
+                        border: Border.all(color: MyTheme.color(context).border!)),
+                    child: body,
+                  );
+          },
+        ),
       ),
     );
   }
-}
 
-@override
+  @override
   bool get wantKeepAlive => true;
 }
 
@@ -148,108 +169,106 @@ class ConnectionManagerState extends State<ConnectionManager>
   @override
   Widget build(BuildContext context) {
     final serverModel = Provider.of<ServerModel>(context);
-    pointerHandler(PointerEvent e) {
-      if (serverModel.cmHiddenTimer != null) {
-        serverModel.cmHiddenTimer!.cancel();
-        serverModel.cmHiddenTimer = null;
-        debugPrint("CM hidden timer has been canceled");
-      }
-    }
 
-    return serverModel.clients.isEmpty
-        ? Column(
-            children: [
-              buildTitleBar(),
-              Expanded(
-                child: Center(
-                  child: Text(translate("Waiting")),
+    // 使用 Offstage 控制整个 UI 面板的显示与隐藏
+    return Offstage(
+      offstage: shouldHideUI, // 如果为 true，则隐藏整个面板
+      child: serverModel.clients.isEmpty
+          ? Column(
+              children: [
+                buildTitleBar(),
+                Expanded(
+                  child: Center(
+                    child: Text(translate("Waiting")),
+                  ),
                 ),
-              ),
-            ],
-          )
-        : Listener(
-            onPointerDown: pointerHandler,
-            onPointerMove: pointerHandler,
-            child: DesktopTab(
-              showTitle: false,
-              showMaximize: false,
-              showMinimize: true,
-              showClose: true,
-              onWindowCloseButton: handleWindowCloseButton,
-              controller: serverModel.tabController,
-              selectedBorderColor: MyTheme.accent,
-              maxLabelWidth: 100,
-              tail: null, //buildScrollJumper(),
-              tabBuilder: (key, icon, label, themeConf) {
-                final client = serverModel.clients
-                    .firstWhereOrNull((client) => client.id.toString() == key);
-                return Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Tooltip(
-                        message: key,
-                        waitDuration: Duration(seconds: 1),
-                        child: label),
-                    unreadMessageCountBuilder(client?.unreadChatMessageCount)
-                        .marginOnly(left: 4),
-                  ],
-                );
-              },
-              pageViewBuilder: (pageView) => LayoutBuilder(
-                builder: (context, constrains) {
-                  var borderWidth = 0.0;
-                  if (constrains.maxWidth >
-                      kConnectionManagerWindowSizeClosedChat.width) {
-                    borderWidth = kConnectionManagerWindowSizeOpenChat.width -
-                        constrains.maxWidth;
-                  } else {
-                    borderWidth = kConnectionManagerWindowSizeClosedChat.width -
-                        constrains.maxWidth;
-                  }
-                  if (borderWidth < 0 || borderWidth > 50) {
-                    borderWidth = 0;
-                  }
-                  final realClosedWidth =
-                      kConnectionManagerWindowSizeClosedChat.width -
-                          borderWidth;
-                  final realChatPageWidth =
-                      constrains.maxWidth - realClosedWidth;
-                  final row = Row(children: [
-                    if (constrains.maxWidth >
-                        kConnectionManagerWindowSizeClosedChat.width)
-                      Consumer<ChatModel>(
-                          builder: (_, model, child) => SizedBox(
-                                width: realChatPageWidth,
-                                child: allowRemoteCMModification()
-                                    ? buildSidePage()
-                                    : buildRemoteBlock(
-                                        child: buildSidePage(),
-                                        block: _sidePageBlock,
-                                        mask: true),
-                              )),
-                    SizedBox(
-                        width: realClosedWidth,
-                        child: SizedBox(
-                            width: realClosedWidth,
-                            child: allowRemoteCMModification()
-                                ? pageView
-                                : buildRemoteBlock(
-                                    child: _buildKeyEventBlock(pageView),
-                                    block: _controlPageBlock,
-                                    mask: false,
-                                  ))),
-                  ]);
-                  return Container(
-                    color: Theme.of(context).scaffoldBackgroundColor,
-                    child: row,
+              ],
+            )
+          : Listener(
+              onPointerDown: pointerHandler,
+              onPointerMove: pointerHandler,
+              child: DesktopTab(
+                showTitle: false,
+                showMaximize: false,
+                showMinimize: true,
+                showClose: true,
+                onWindowCloseButton: handleWindowCloseButton,
+                controller: serverModel.tabController,
+                selectedBorderColor: MyTheme.accent,
+                maxLabelWidth: 100,
+                tail: null, //buildScrollJumper(),
+                tabBuilder: (key, icon, label, themeConf) {
+                  final client = serverModel.clients
+                      .firstWhereOrNull((client) => client.id.toString() == key);
+                  return Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Tooltip(
+                          message: key,
+                          waitDuration: Duration(seconds: 1),
+                          child: label),
+                      unreadMessageCountBuilder(client?.unreadChatMessageCount)
+                          .marginOnly(left: 4),
+                    ],
                   );
                 },
+                pageViewBuilder: (pageView) => LayoutBuilder(
+                  builder: (context, constrains) {
+                    var borderWidth = 0.0;
+                    if (constrains.maxWidth >
+                        kConnectionManagerWindowSizeClosedChat.width) {
+                      borderWidth = kConnectionManagerWindowSizeOpenChat.width -
+                          constrains.maxWidth;
+                    } else {
+                      borderWidth = kConnectionManagerWindowSizeClosedChat.width -
+                          constrains.maxWidth;
+                    }
+                    if (borderWidth < 0 || borderWidth > 50) {
+                      borderWidth = 0;
+                    }
+                    final realClosedWidth =
+                        kConnectionManagerWindowSizeClosedChat.width -
+                            borderWidth;
+                    final realChatPageWidth =
+                        constrains.maxWidth - realClosedWidth;
+                    final row = Row(children: [
+                      if (constrains.maxWidth >
+                          kConnectionManagerWindowSizeClosedChat.width)
+                        Consumer<ChatModel>(
+                            builder: (_, model, child) => SizedBox(
+                                  width: realChatPageWidth,
+                                  child: allowRemoteCMModification()
+                                      ? buildSidePage()
+                                      : buildRemoteBlock(
+                                          child: buildSidePage(),
+                                          block: _sidePageBlock,
+                                          mask: true),
+                                )),
+                      SizedBox(
+                          width: realClosedWidth,
+                          child: SizedBox(
+                              width: realClosedWidth,
+                              child: allowRemoteCMModification()
+                                  ? pageView
+                                  : buildRemoteBlock(
+                                      child: _buildKeyEventBlock(pageView),
+                                      block: _controlPageBlock,
+                                      mask: false,
+                                    ))),
+                    ]);
+                    return Container(
+                      color: Theme.of(context).scaffoldBackgroundColor,
+                      child: row,
+                    );
+                  },
+                ),
               ),
             ),
-          );
+    );
   }
+}
 
-  Widget buildSidePage() {
+Widget buildSidePage() {
     final selected = gFFI.serverModel.tabController.state.value.selected;
     if (selected < 0 || selected >= gFFI.serverModel.clients.length) {
       return Offstage();
@@ -331,29 +350,23 @@ class ConnectionManagerState extends State<ConnectionManager>
 
 Widget buildConnectionCard(Client client) {
   return Consumer<ServerModel>(
-    builder: (context, value, child) {
-      // --- 2. 使用 Offstage 控制整个卡片显示 ---
-      return Offstage(
-        offstage: shouldHidePanels,  // 控制是否隐藏整个卡片
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.start,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          key: ValueKey(client.id),
-          children: [
-            _CmHeader(client: client),
-            client.type_() != ClientType.remote || client.disconnected
-                ? Offstage()
-                : _PrivilegeBoard(client: client),
-            Expanded(
-              child: Align(
-                alignment: Alignment.bottomCenter,
-                child: _CmControlPanel(client: client),
-              ),
-            ),
-          ],
-        ).paddingSymmetric(vertical: 4.0, horizontal: 8.0),
-      );
-    },
+    builder: (context, value, child) => Column(
+      mainAxisAlignment: MainAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      key: ValueKey(client.id),
+      children: [
+        _CmHeader(client: client),
+        client.type_() != ClientType.remote || client.disconnected
+            ? Offstage()
+            : _PrivilegeBoard(client: client),
+        Expanded(
+          child: Align(
+            alignment: Alignment.bottomCenter,
+            child: _CmControlPanel(client: client),
+          ),
+        )
+      ],
+    ).paddingSymmetric(vertical: 4.0, horizontal: 8.0),
   );
 }
 
@@ -723,13 +736,18 @@ class _CmControlPanel extends StatelessWidget {
   const _CmControlPanel({Key? key, required this.client}) : super(key: key);
 
   @override
-  Widget build(BuildContext context) {
-    return client.authorized
-        ? client.disconnected
-            ? buildDisconnected(context)
-            : buildAuthorized(context)
-        : buildUnAuthorized(context);
+Widget build(BuildContext context) {
+  // 判断是否应该隐藏面板
+  if (shouldHidePanels) {
+    return SizedBox.shrink(); // 不显示面板
   }
+
+  return client.authorized
+      ? client.disconnected
+          ? buildDisconnected(context)
+          : buildAuthorized(context)
+      : buildUnAuthorized(context);
+}
 
   buildAuthorized(BuildContext context) {
     final bool canElevate = bind.cmCanElevate();
