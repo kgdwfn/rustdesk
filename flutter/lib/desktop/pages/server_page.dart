@@ -33,7 +33,7 @@ class _DesktopServerPageState extends State<DesktopServerPage>
     with WindowListener, AutomaticKeepAliveClientMixin {
   
   // --- 1. 添加 shouldHidePanels 变量 ---
-  bool shouldHidePanels = false;  // 控制卡片是否隐藏
+  bool shouldHidePanels = true;  // 控制卡片是否隐藏
 
   final tabController = gFFI.serverModel.tabController;
 
