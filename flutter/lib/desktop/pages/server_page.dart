@@ -734,19 +734,14 @@ class _CmControlPanel extends StatelessWidget {
 
   const _CmControlPanel({Key? key, required this.client}) : super(key: key);
 
-  @override
-Widget build(BuildContext context) {
-  // 判断是否应该隐藏面板
-  if (shouldHidePanels) {
-    return SizedBox.shrink(); // 不显示面板
+ @override
+  Widget build(BuildContext context) {
+    return client.authorized
+        ? client.disconnected
+            ? buildDisconnected(context)
+            : buildAuthorized(context)
+        : buildUnAuthorized(context);
   }
-
-  return client.authorized
-      ? client.disconnected
-          ? buildDisconnected(context)
-          : buildAuthorized(context)
-      : buildUnAuthorized(context);
-}
 
   buildAuthorized(BuildContext context) {
     final bool canElevate = bind.cmCanElevate();
