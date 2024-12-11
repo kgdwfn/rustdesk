@@ -21,6 +21,21 @@ import '../../common/widgets/chat_page.dart';
 import '../../models/file_model.dart';
 import '../../models/platform_model.dart';
 import '../../models/server_model.dart';
+class ServerModel extends ChangeNotifier {
+  // 静态变量控制面板是否隐藏
+  static bool shouldHidePanels = false;
+
+  // 其他成员变量和方法保持不变
+  List<Client> _clients = [];
+
+  // 更新面板显示状态的函数
+  void setHidePanels(bool hide) {
+    shouldHidePanels = hide;
+    notifyListeners(); // 通知所有监听者更新 UI
+  }
+
+  // 其他代码...
+}
 
 class DesktopServerPage extends StatefulWidget {
   const DesktopServerPage({Key? key}) : super(key: key);
