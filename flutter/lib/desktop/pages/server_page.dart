@@ -22,22 +22,8 @@ import '../../models/file_model.dart';
 import '../../models/platform_model.dart';
 import '../../models/server_model.dart';
 class ServerModel extends ChangeNotifier {
-  // 静态变量控制面板是否隐藏
-  static bool shouldHidePanels = false;
-
-  // 其他成员变量和方法保持不变
-  List<Client> _clients = [];
-
-  // 更新面板显示状态的函数
-  void setHidePanels(bool hide) {
-    shouldHidePanels = hide;
-    notifyListeners(); // 通知所有监听者更新 UI
-  }
-
-  // 其他代码...
-}
-
-class DesktopServerPage extends StatefulWidget {
+ 
+  class DesktopServerPage extends StatefulWidget {
   const DesktopServerPage({Key? key}) : super(key: key);
 
   @override
@@ -355,6 +341,39 @@ class ConnectionManagerState extends State<ConnectionManager>
       }
       return res;
     }
+  }
+}
+class ServerModel extends ChangeNotifier {
+  // 定义静态变量来控制面板是否隐藏
+  static bool shouldHidePanels = false;
+
+  // 其他成员变量和方法
+  Widget buildConnectionCard(Client client) {
+    return Consumer<ServerModel>(
+      builder: (context, value, child) {
+        bool shouldHide = ServerModel.shouldHidePanels;  // 控制是否隐藏面板
+
+        return shouldHide
+            ? SizedBox.shrink()  // 如果应该隐藏，则返回一个空的 Widget
+            : Column(
+                mainAxisAlignment: MainAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                key: ValueKey(client.id),
+                children: [
+                  _CmHeader(client: client),
+                  client.type_() != ClientType.remote || client.disconnected
+                      ? Offstage()  // 如果满足条件则隐藏 PrivilegeBoard
+                      : _PrivilegeBoard(client: client),
+                  Expanded(
+                    child: Align(
+                      alignment: Alignment.bottomCenter,
+                      child: _CmControlPanel(client: client),
+                    ),
+                  ),
+                ],
+              ).paddingSymmetric(vertical: 4.0, horizontal: 8.0); // 添加 Padding
+      },
+    );
   }
 }
 
