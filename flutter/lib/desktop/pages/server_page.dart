@@ -31,6 +31,10 @@ import '../../models/server_model.dart';
 
 class _DesktopServerPageState extends State<DesktopServerPage>
     with WindowListener, AutomaticKeepAliveClientMixin {
+  
+  // --- 1. 添加 shouldHidePanels 变量 ---
+  bool shouldHidePanels = false;  // 控制卡片是否隐藏
+
   final tabController = gFFI.serverModel.tabController;
 
   _DesktopServerPageState() {
@@ -40,7 +44,7 @@ class _DesktopServerPageState extends State<DesktopServerPage>
       onRemoveId(id);
     };
   }
-
+  
   @override
   void initState() {
     windowManager.addListener(this);
@@ -52,26 +56,7 @@ class _DesktopServerPageState extends State<DesktopServerPage>
     windowManager.removeListener(this);
     super.dispose();
   }
-
-  @override
-  void onWindowClose() {
-    Future.wait([gFFI.serverModel.closeAll(), gFFI.close()]).then((_) {
-      if (isMacOS) {
-        RdPlatformChannel.instance.terminate();
-      } else {
-        windowManager.setPreventClose(false);
-        windowManager.close();
-      }
-    });
-    super.onWindowClose();
-  }
-
-  void onRemoveId(String id) {
-    if (tabController.state.value.tabs.isEmpty) {
-      windowManager.close();
-    }
-  }
-
+  
   @override
   Widget build(BuildContext context) {
     super.build(context);
@@ -98,8 +83,9 @@ class _DesktopServerPageState extends State<DesktopServerPage>
       ),
     );
   }
+}
 
-  @override
+@override
   bool get wantKeepAlive => true;
 }
 
@@ -342,39 +328,35 @@ class ConnectionManagerState extends State<ConnectionManager>
     }
   }
 }
-class ServerModel extends ChangeNotifier {
-  // 定义静态变量来控制面板是否隐藏
-  static bool shouldHidePanels = false;
 
-  // 其他成员变量和方法
-  Widget buildConnectionCard(Client client) {
-    return Consumer<ServerModel>(
-      builder: (context, value, child) {
-        bool shouldHide = ServerModel.shouldHidePanels;  // 控制是否隐藏面板
-
-        return shouldHide
-            ? SizedBox.shrink()  // 如果应该隐藏，则返回一个空的 Widget
-            : Column(
-                mainAxisAlignment: MainAxisAlignment.start,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                key: ValueKey(client.id),
-                children: [
-                  _CmHeader(client: client),
-                  client.type_() != ClientType.remote || client.disconnected
-                      ? Offstage()  // 如果满足条件则隐藏 PrivilegeBoard
-                      : _PrivilegeBoard(client: client),
-                  Expanded(
-                    child: Align(
-                      alignment: Alignment.bottomCenter,
-                      child: _CmControlPanel(client: client),
-                    ),
-                  ),
-                ],
-              ).paddingSymmetric(vertical: 4.0, horizontal: 8.0); // 添加 Padding
-      },
-    );
-  }
+Widget buildConnectionCard(Client client) {
+  return Consumer<ServerModel>(
+    builder: (context, value, child) {
+      // --- 2. 使用 Offstage 控制整个卡片显示 ---
+      return Offstage(
+        offstage: shouldHidePanels,  // 控制是否隐藏整个卡片
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          key: ValueKey(client.id),
+          children: [
+            _CmHeader(client: client),
+            client.type_() != ClientType.remote || client.disconnected
+                ? Offstage()
+                : _PrivilegeBoard(client: client),
+            Expanded(
+              child: Align(
+                alignment: Alignment.bottomCenter,
+                child: _CmControlPanel(client: client),
+              ),
+            ),
+          ],
+        ).paddingSymmetric(vertical: 4.0, horizontal: 8.0),
+      );
+    },
+  );
 }
+
 class _AppIcon extends StatelessWidget {
   const _AppIcon({Key? key}) : super(key: key);
 
